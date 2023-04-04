@@ -1,0 +1,60 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - my-release
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Replace Name Space
+        uses: mingjun97/file-regex-replace@v1
+        with:
+          regex: 'com\.ixam97\.carStatsViewer(_dev)?'
+          replacement: '${{ vars.PACKAGE }}'
+      - name: Inject ABRP api key
+        uses: mingjun97/file-regex-replace@v1
+        with:
+          regex: '___ABRP_API_KEY___'
+          replacement: '${{ secrets.ABRP_API_KEY }}'
+          include: 'credentials\.xml'
+      - name: set up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+      - name: Build
+        run: ./gradlew build
+      - name: Assemble Release Bundle
+        run: |
+          ./gradlew bundleRelease
+      - name: Sign Release
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: automotive/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+      - name: Create service_account.json
+        run: echo '${{ secrets.SERVICE_ACCOUNT_JSON }}' > service_account.json
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: carStatsViewer.aab
+          path: automotive/build/outputs/bundle/release/automotive-release.aab
+          retention-days: 3
+      - name: Deploy
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJson: service_account.json
+          packageName: ${{ vars.PACKAGE }}
+          releaseFiles: automotive/build/outputs/bundle/release/automotive-release.aab
+          track: automotive:internal
+          status: draft
