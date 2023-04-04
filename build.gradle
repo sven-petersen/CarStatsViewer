@@ -7,11 +7,11 @@ buildscript {
         gradlePluginPortal()
     }
 
-    // ext {
-    //     // Use the following booleans to configure the usage of some APIs
-    //     useMapbox = true
-    //     useFirebase = false
-    // }
+    ext {
+        // Use the following booleans to configure the usage of some APIs
+        useMapbox = false
+        useFirebase = false
+    }
 }
 plugins {
     alias(libs.plugins.androidApplication) apply false
