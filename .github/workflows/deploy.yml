@@ -30,14 +30,14 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
       - name: Build
-        run: ./gradlew build
+        run: ./gradlew assembleStableRelease
       - name: Assemble Release Bundle
         run: |
-          ./gradlew bundleRelease
+          ./gradlew bundleStableRelease
       - name: Sign Release
         uses: r0adkll/sign-android-release@v1
         with:
-          releaseDirectory: automotive/build/outputs/bundle/release
+          releaseDirectory: automotive/build/outputs/bundle/stableRelease
           signingKeyBase64: ${{ secrets.SIGNING_KEY }}
           alias: ${{ secrets.ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
@@ -48,13 +48,13 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: carStatsViewer.aab
-          path: automotive/build/outputs/bundle/release/automotive-release.aab
+          path: automotive/build/outputs/bundle/stableRelease/automotive-stable-release.aab
           retention-days: 3
       - name: Deploy
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJson: service_account.json
           packageName: ${{ vars.PACKAGE }}
-          releaseFiles: automotive/build/outputs/bundle/release/automotive-release.aab
+          releaseFiles: automotive/build/outputs/bundle/stableRelease/automotive-stable-release.aab
           track: automotive:internal
           status: draft
